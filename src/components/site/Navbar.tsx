@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const links = [
   { href: "#home", label: "Anasayfa" },
@@ -48,7 +49,10 @@ export const Navbar = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center gap-3">
+          <Button asChild variant="ghost" size="sm" className="text-foreground/70">
+            <Link to="/admin">Yetkili Girişi</Link>
+          </Button>
           <Button asChild variant="hero" size="default">
             <a href="#apply">Hemen Başvur</a>
           </Button>
@@ -82,9 +86,14 @@ export const Navbar = () => {
                   {l.label}
                 </a>
               ))}
-              <Button asChild variant="hero" className="mt-3">
-                <a href="#apply" onClick={() => setOpen(false)}>Hemen Başvur</a>
-              </Button>
+              <div className="flex flex-col gap-2 mt-3">
+                <Button asChild variant="hero">
+                  <a href="#apply" onClick={() => setOpen(false)}>Hemen Başvur</a>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/admin" onClick={() => setOpen(false)}>Yetkili Girişi</Link>
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}

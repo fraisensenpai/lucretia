@@ -28,6 +28,8 @@ export default function Admin() {
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [mode, setMode] = useState<"login" | "register">("login");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -63,8 +65,6 @@ export default function Admin() {
       console.error("Role check error:", err);
     } finally {
       setLoading(false);
-      // If we are logged in, we can try to fetch, even if role check fails 
-      // (RLS will protect the data anyway)
       fetchApplications();
     }
   };
@@ -79,16 +79,51 @@ export default function Admin() {
     else if (error) console.error("Fetch error:", error);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast({
-        title: "Giriş başarısız",
-        description: error.message,
-        variant: "destructive",
+
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({
+          title: "Giriş başarısız",
+          description: error.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    } else {
+      // Register
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
       });
+
+      if (signUpError) {
+        toast({
+          title: "Kayıt başarısız",
+          description: signUpError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Create profile
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert([{ id: data.user.id, full_name: fullName, role: "user" }]);
+
+        if (profileError) console.error("Profile creation error:", profileError);
+
+        toast({
+          title: "Kayıt başarılı",
+          description: "Hesabınız oluşturuldu. Yetkili onayı sonrası giriş yapabilirsiniz.",
+        });
+        setMode("login");
+      }
       setLoading(false);
     }
   };
@@ -110,10 +145,39 @@ export default function Admin() {
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-card">
           <div className="text-center">
-            <h2 className="text-3xl font-bold">Admin Girişi</h2>
-            <p className="mt-2 text-muted-foreground">Başvuruları yönetmek için giriş yapın.</p>
+            <h2 className="text-3xl font-bold">Yetkili Paneli</h2>
+            <p className="mt-2 text-muted-foreground">
+              {mode === "login" ? "Başvuruları yönetmek için giriş yapın." : "Yeni yetkili hesabı oluşturun."}
+            </p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          <div className="flex p-1 bg-muted rounded-lg">
+            <button
+              onClick={() => setMode("login")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "login" ? "bg-background shadow-sm text-primary" : "text-muted-foreground"}`}
+            >
+              Giriş Yap
+            </button>
+            <button
+              onClick={() => setMode("register")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === "register" ? "bg-background shadow-sm text-primary" : "text-muted-foreground"}`}
+            >
+              Kayıt Ol
+            </button>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {mode === "register" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Ad Soyad</label>
+                <Input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  placeholder="Adınız Soyadınız"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">E-posta</label>
               <Input
@@ -134,10 +198,27 @@ export default function Admin() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Giriş Yap"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "login" ? "Giriş Yap" : "Kayıt Ol"}
             </Button>
           </form>
         </div>
+      </div>
+    );
+  }
+
+  if (role !== "admin") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
+        <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4 text-amber-500">
+          <Info className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold">Onay Bekliyor</h2>
+        <p className="mt-2 text-muted-foreground max-w-sm">
+          Hesabınız başarıyla oluşturuldu. Başvuruları görüntüleyebilmeniz için yöneticinin hesabınızı onaylaması gerekmektedir.
+        </p>
+        <Button onClick={handleLogout} variant="outline" className="mt-6">
+          Çıkış Yap
+        </Button>
       </div>
     );
   }
