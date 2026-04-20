@@ -107,7 +107,7 @@ export const Contact = () => {
         <div className="container-page py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
           <Logo />
           <p className="text-sm text-muted-foreground text-center">
-            © 2026 Lucretia Aydınlık Zirvesi. Tüm hakları saklıdır.
+            © 2026 Lucretia Aydınlık Zirvesi. FraisenSenpai tarafından ❤️ ile yapıldı.
           </p>
           <div className="flex items-center gap-2">
             <a
