@@ -98,6 +98,11 @@ export default function Admin() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
       });
 
       if (signUpError) {
@@ -111,13 +116,6 @@ export default function Admin() {
       }
 
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert([{ id: data.user.id, full_name: fullName, role: "user" }]);
-
-        if (profileError) console.error("Profile creation error:", profileError);
-
         toast({
           title: "Kayıt başarılı",
           description: "Hesabınız oluşturuldu. Yetkili onayı sonrası giriş yapabilirsiniz.",
